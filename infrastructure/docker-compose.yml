@@ -1,0 +1,210 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: ovu_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ovu_user
+      POSTGRES_PASSWORD: ovu_pass_2024
+      POSTGRES_DB: ovu_main_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infrastructure/docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
+    networks:
+      - ovu_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ovu_user"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: ovu_redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --requirepass ovu_redis_pass_2024
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - ovu_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # RabbitMQ Message Queue
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: ovu_rabbitmq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ovu_rabbit
+      RABBITMQ_DEFAULT_PASS: ovu_rabbit_pass_2024
+      RABBITMQ_DEFAULT_VHOST: ovu_vhost
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    ports:
+      - "5672:5672"    # AMQP port
+      - "15672:15672"  # Management UI
+    networks:
+      - ovu_network
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Nginx Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    container_name: ovu_nginx
+    restart: unless-stopped
+    volumes:
+      - ./infrastructure/docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./infrastructure/docker/nginx/conf.d:/etc/nginx/conf.d:ro
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - ovu_network
+    depends_on:
+      - ulm_backend
+      - aam_backend
+
+  # ULM Backend Service
+  ulm_backend:
+    build:
+      context: ./services/ulm/backend
+      dockerfile: Dockerfile
+    container_name: ulm_backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql+asyncpg://ovu_user:ovu_pass_2024@postgres:5432/ulm_db
+      REDIS_URL: redis://:ovu_redis_pass_2024@redis:6379/0
+      SECRET_KEY: ${ULM_SECRET_KEY:-development-secret-key-change-in-production}
+      DEBUG: ${DEBUG:-true}
+    volumes:
+      - ./services/ulm/backend:/app
+    ports:
+      - "8001:8001"
+    networks:
+      - ovu_network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload
+
+  # ULM Flutter Web
+  ulm_flutter:
+    build:
+      context: ./services/ulm/frontend/flutter
+      dockerfile: Dockerfile.dev
+    container_name: ulm_flutter
+    restart: unless-stopped
+    environment:
+      API_BASE_URL: http://ulm_backend:8001
+    volumes:
+      - ./services/ulm/frontend/flutter:/app
+      - ./shared/interface-resources/flutter:/shared
+    ports:
+      - "3001:3001"
+    networks:
+      - ovu_network
+    depends_on:
+      - ulm_backend
+
+  # AAM Backend Service
+  aam_backend:
+    build:
+      context: ./services/aam/backend
+      dockerfile: Dockerfile
+    container_name: aam_backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql+asyncpg://ovu_user:ovu_pass_2024@postgres:5432/aam_db
+      REDIS_URL: redis://:ovu_redis_pass_2024@redis:6379/1
+      ULM_SERVICE_URL: http://ulm_backend:8001
+      SECRET_KEY: ${AAM_SECRET_KEY:-development-secret-key-change-in-production}
+      DEBUG: ${DEBUG:-true}
+    volumes:
+      - ./services/aam/backend:/app
+    ports:
+      - "8002:8002"
+    networks:
+      - ovu_network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      ulm_backend:
+        condition: service_started
+
+  # AAM Flutter Web
+  aam_flutter:
+    build:
+      context: ./services/aam/frontend/flutter
+      dockerfile: Dockerfile.dev
+    container_name: aam_flutter
+    restart: unless-stopped
+    environment:
+      API_BASE_URL: http://aam_backend:8002
+      ULM_API_URL: http://ulm_backend:8001
+    volumes:
+      - ./services/aam/frontend/flutter:/app
+      - ./shared/interface-resources/flutter:/shared
+    ports:
+      - "3002:3002"
+    networks:
+      - ovu_network
+    depends_on:
+      - aam_backend
+
+  # Adminer - Database Management
+  adminer:
+    image: adminer:latest
+    container_name: ovu_adminer
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    networks:
+      - ovu_network
+    depends_on:
+      - postgres
+
+  # Mailhog - Email Testing (Development)
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: ovu_mailhog
+    restart: unless-stopped
+    ports:
+      - "1025:1025"  # SMTP
+      - "8025:8025"  # Web UI
+    networks:
+      - ovu_network
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  rabbitmq_data:
+    driver: local
+
+networks:
+  ovu_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16

@@ -1,0 +1,88 @@
+# Environment Variables for PLOI.IO
+# Add these in PLOI Dashboard → Site → Environment
+
+# === Database Configuration (All servers need this) ===
+DB_HOST=YOUR_DATABASE_SERVER_IP
+DB_PORT=5432
+DB_NAME_ULM=ulm_db
+DB_NAME_AAM=aam_db
+DB_USER=ovu_user
+DB_PASSWORD=YOUR_STRONG_PASSWORD_HERE
+
+# Database URLs (constructed from above)
+DATABASE_URL=postgresql://ovu_user:YOUR_STRONG_PASSWORD_HERE@YOUR_DATABASE_SERVER_IP:5432/ulm_db
+DATABASE_URL_AAM=postgresql://ovu_user:YOUR_STRONG_PASSWORD_HERE@YOUR_DATABASE_SERVER_IP:5432/aam_db
+
+# === Redis Configuration ===
+REDIS_HOST=YOUR_DATABASE_SERVER_IP
+REDIS_PORT=6379
+REDIS_PASSWORD=YOUR_REDIS_PASSWORD_HERE
+REDIS_URL=redis://:YOUR_REDIS_PASSWORD_HERE@YOUR_DATABASE_SERVER_IP:6379/0
+
+# === Security Keys (Generate unique for each) ===
+SECRET_KEY=GENERATE_64_CHARACTER_RANDOM_STRING_HERE
+SECRET_KEY_AAM=GENERATE_ANOTHER_64_CHARACTER_RANDOM_STRING
+JWT_SECRET=GENERATE_THIRD_64_CHARACTER_RANDOM_STRING
+
+# === API Configuration ===
+API_HOST=0.0.0.0
+API_WORKERS=4
+DEBUG=false
+ENVIRONMENT=production
+
+# === Service URLs ===
+ULM_SERVICE_URL=http://localhost:8001
+AAM_SERVICE_URL=http://localhost:8002
+FRONTEND_URL=https://ulm.ovu.co.il
+AAM_FRONTEND_URL=https://aam.ovu.co.il
+
+# === CORS Configuration ===
+CORS_ORIGINS=https://ulm.ovu.co.il,https://aam.ovu.co.il,https://ovu.co.il
+
+# === Email Configuration (Optional) ===
+SMTP_HOST=smtp.sendgrid.net
+SMTP_PORT=587
+SMTP_USER=apikey
+SMTP_PASSWORD=YOUR_SENDGRID_API_KEY
+SMTP_FROM_EMAIL=noreply@ovu.co.il
+SMTP_FROM_NAME=OVU System
+
+# === Rate Limiting ===
+API_RATE_LIMIT=100/minute
+LOGIN_RATE_LIMIT=5/minute
+REGISTER_RATE_LIMIT=3/hour
+
+# === Monitoring (Optional) ===
+SENTRY_DSN=
+NEW_RELIC_LICENSE_KEY=
+SLACK_WEBHOOK=
+
+# === Feature Flags ===
+ENABLE_MFA=true
+ENABLE_API_DOCS=false
+ENABLE_DEBUG_TOOLBAR=false
+MAINTENANCE_MODE=false
+
+# === File Upload ===
+MAX_UPLOAD_SIZE=104857600  # 100MB in bytes
+UPLOAD_PATH=/var/www/ovu-backend/uploads
+
+# === Logging ===
+LOG_LEVEL=INFO
+LOG_PATH=/var/www/ovu-backend/logs
+
+# === Session Configuration ===
+SESSION_LIFETIME=86400  # 24 hours in seconds
+SESSION_SECURE=true
+SESSION_HTTPONLY=true
+
+# === Pagination ===
+DEFAULT_PAGE_SIZE=20
+MAX_PAGE_SIZE=100
+
+# === Timezone ===
+TIMEZONE=Asia/Jerusalem
+
+# === Language ===
+DEFAULT_LANGUAGE=he
+SUPPORTED_LANGUAGES=he,en

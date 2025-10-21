@@ -1,0 +1,134 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  # Python Backend Tests
+  backend-tests:
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_pass
+          POSTGRES_DB: test_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Cache pip packages
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r services/ulm/backend/requirements.txt
+        pip install -r services/aam/backend/requirements.txt
+        pip install pytest pytest-cov
+    
+    - name: Run tests
+      env:
+        DATABASE_URL: postgresql://test_user:test_pass@localhost:5432/test_db
+      run: |
+        # Add tests when ready
+        echo "Tests will be added here"
+        # pytest services/ulm/backend/tests -v --cov
+    
+    - name: Check code quality
+      run: |
+        pip install flake8 black
+        # flake8 services/*/backend/app --max-line-length=100
+        # black services/*/backend/app --check
+  
+  # Flutter Frontend Tests
+  flutter-tests:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.16.0'
+        channel: 'stable'
+    
+    - name: Get dependencies
+      run: |
+        cd services/ulm/frontend/flutter
+        flutter pub get
+    
+    - name: Run tests
+      run: |
+        cd services/ulm/frontend/flutter
+        # flutter test
+        echo "Flutter tests will be added here"
+    
+    - name: Analyze code
+      run: |
+        cd services/ulm/frontend/flutter
+        flutter analyze
+  
+  # Docker Build Test
+  docker-build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Build Docker images
+      run: |
+        docker-compose build ulm_backend
+        docker-compose build aam_backend
+    
+    - name: Test Docker images
+      run: |
+        docker-compose up -d postgres redis
+        sleep 5
+        docker-compose up -d ulm_backend aam_backend
+        sleep 10
+        docker-compose ps
+        curl -f http://localhost:8001/health || exit 1
+        curl -f http://localhost:8002/health || exit 1
+
+  # Deploy to PLOI (only on main branch)
+  deploy:
+    needs: [backend-tests, flutter-tests, docker-build]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+    - name: Deploy to PLOI
+      run: |
+        # Add PLOI webhook here
+        echo "Deploy to PLOI"
+        # curl -X POST https://ploi.io/api/webhook/YOUR_WEBHOOK_ID
+
+
+
+
+
+
+
+

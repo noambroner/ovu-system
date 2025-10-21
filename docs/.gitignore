@@ -1,0 +1,56 @@
+# Node modules
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+
+# Build outputs
+dist/
+build/
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+/tmp/
+
+# Downloaded packages
+gh_*/
+*.tar.gz
+*.zip
+
+# Frontend projects (these are in separate repos)
+frontend-projects/
+
+# Secrets (just in case)
+*.key
+*.pem
+*.env
+.env.*
+
+# Local repo clones
+ovu-aam/
+ovu-docs/
+ovu-shared/
+ovu-ulm/
