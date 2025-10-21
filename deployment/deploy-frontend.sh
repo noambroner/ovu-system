@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # OVU ULM Frontend Deployment Script
-# Server: 64.176.173.105 (ploi@ulm-frontend)
+# Server: 64.176.173.105 (ploi@ovu-frontend)
 
 set -e
 
@@ -16,38 +16,38 @@ RED='\033[0;31m'
 NC='\033[0m'
 
 # Configuration
-FRONTEND_DIR="/home/ploi/ulm-frontend.bflow.co.il"
-BUILD_DIR="frontend/react"
+REPO_DIR="ovu-ulm"
+BUILD_DIR="$REPO_DIR/frontend/react"
+PUBLIC_DIR="ulm-rct.ovu.co.il/public"
 
-echo -e "${BLUE}Step 1/4: Checking current status...${NC}"
-cd $FRONTEND_DIR
+echo -e "${BLUE}Step 1/5: Checking current status...${NC}"
+cd ~/$REPO_DIR
 git status
 
 echo ""
-echo -e "${BLUE}Step 2/4: Pulling latest code from GitHub...${NC}"
+echo -e "${BLUE}Step 2/5: Pulling latest code from GitHub...${NC}"
 git fetch origin
 git pull origin main
 echo -e "${GREEN}✓ Code updated${NC}"
 
 echo ""
-echo -e "${BLUE}Step 3/4: Building React application...${NC}"
-cd $BUILD_DIR
+echo -e "${BLUE}Step 3/5: Building React application...${NC}"
+cd ~/$BUILD_DIR
 npm install
 npm run build
 echo -e "${GREEN}✓ Build completed${NC}"
 
 echo ""
-echo -e "${BLUE}Step 4/4: Deploying to production...${NC}"
-# Copy build to nginx directory
-sudo rm -rf /var/www/ulm-frontend.bflow.co.il/public/*
-sudo cp -r dist/* /var/www/ulm-frontend.bflow.co.il/public/
-sudo chown -R www-data:www-data /var/www/ulm-frontend.bflow.co.il/public/
-echo -e "${GREEN}✓ Files deployed${NC}"
+echo -e "${BLUE}Step 4/5: Deploying to production...${NC}"
+# Copy build to nginx public directory
+rm -rf ~/$PUBLIC_DIR/assets/*
+cp -r dist/* ~/$PUBLIC_DIR/
+echo -e "${GREEN}✓ Files deployed to $PUBLIC_DIR${NC}"
 
 echo ""
-echo -e "${BLUE}Restarting nginx...${NC}"
-sudo systemctl restart nginx
-echo -e "${GREEN}✓ Nginx restarted${NC}"
+echo -e "${BLUE}Step 5/5: Verifying deployment...${NC}"
+ls -lh ~/$PUBLIC_DIR/assets/
+echo -e "${GREEN}✓ Deployment verified${NC}"
 
 echo ""
 echo -e "${GREEN}═══════════════════════════════════════${NC}"
@@ -55,7 +55,7 @@ echo -e "${GREEN}✓ Frontend Deployment Completed!${NC}"
 echo -e "${GREEN}═══════════════════════════════════════${NC}"
 echo ""
 echo -e "${YELLOW}Test the application:${NC}"
-echo "https://ulm-frontend.bflow.co.il"
+echo "https://ulm-rct.ovu.co.il"
 echo ""
 echo -e "${YELLOW}Clear browser cache and test:${NC}"
 echo "- Token Control page should appear in sidebar"
