@@ -45,3 +45,4 @@ $$ LANGUAGE plpgsql;
 COMMENT ON TABLE refresh_tokens IS 'Stores refresh tokens for user authentication';
 COMMENT ON TABLE token_settings IS 'User-specific token expiration settings';
 
+

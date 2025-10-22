@@ -59,3 +59,4 @@ echo ""
 echo -e "${BLUE}כעת תוכל לעבוד ב-Monorepo:${NC}"
 echo "cd ${BASE_DIR}/ovu-system"
 
+

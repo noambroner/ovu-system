@@ -64,3 +64,4 @@ echo ""
 echo -e "${YELLOW}Check logs:${NC}"
 echo "journalctl --user -u $SERVICE_NAME -f"
 
+

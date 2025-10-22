@@ -43,3 +43,4 @@ class TokenSettingsUpdate(BaseModel):
     access_token_expire_minutes: Optional[int] = None
     refresh_token_expire_days: Optional[int] = None
 
+
